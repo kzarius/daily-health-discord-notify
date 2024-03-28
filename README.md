@@ -8,7 +8,7 @@ A bash script that checks on the latest scrubs on zfs pools and reports them to 
 ## Setup
 You'll need to set up a webhook on the two channels you'll be reporting to (Edit channel > Integrations > View Webhooks > Add webhook). Copy the webhook url and plop the webhook for the channel that you'll be relying on all success and error messages to be spammed to into `DISK_HEALTH_WEBHOOK_URL`, meanwhile make another webhook to a channel that you would want only errors to be sent and paste into `GENERAL_WEBHOOK_URL`.
 
-You can also customize the name and emoji of the device that will be reporting with `discord_device_name` and `discord_device_icon`, this way it's easier to sort through multiple devices if they're all reporting to the same channel.
+You can also customize the name and emoji of the device that will be reporting with `DEVICE_NAME` and `DEVICE_ICON`, this way it's easier to sort through multiple devices if they're all reporting to the same channel.
 
 ### Scheduling
 Use `crontab` or whatever preferred scheduler. If you don't schedule scrubs, you should. There are many philosophies around how often, I do them bimonthly.
