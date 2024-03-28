@@ -14,8 +14,8 @@ GENERAL_WEBHOOK_URL="https://discord.com/api/webhooks/xxxx/xxxx"
 DISK_HEALTH_WEBHOOK_URL="https://discord.com/api/webhooks/xxxx/xxxx"
 
 # For differentiating between different devices you want reported.
-discord_device_name="Home Server"
-discord_device_icon=":whale:" # Hover over the emojis in Discord chat to see the icon name.
+DEVICE_NAME="Home"
+DEVICE_ICON=":whale:" # Hover over the emojis to see the icon name.
 
 discord_title=""
 discord_icon=""
@@ -114,9 +114,7 @@ do
     discord_embeds='{
         "username": "Disk Health",
         "embeds": [{
-            "author": {
-                "name": "Pool '${pool_name}' (on '${discord_device_name}' '${discord_device_icon}')"
-            },
+            "title": "Pool '${pool_name}' (on '${DEVICE_NAME}' '${DEVICE_ICON}')",
             "description": "'${discord_icon}' '${discord_description}'",
             "color": '${discord_color}'
         }]
