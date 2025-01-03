@@ -3,10 +3,17 @@ A bash script that checks on the latest scrubs on zfs pools and reports them to 
 
 ## Requirements
 - Access to creating webhooks on the Discord server you reside in.
-- A ZFS pool.
+- A ZFS pool and access to the `zpool` command.
 
 ## Setup
-You'll need to set up a webhook on the two channels you'll be reporting to (Edit channel > Integrations > View Webhooks > Add webhook). Copy the webhook url and plop the webhook for the channel that you'll be relying on all success and error messages to be spammed to into `DISK_HEALTH_WEBHOOK_URL`, meanwhile make another webhook to a channel that you would want only errors to be sent and paste into `GENERAL_WEBHOOK_URL`.
+This script is meant to be run with an `.env` file in the same directory. Within the `.env` file, you should set these variables:
+- POOL_NAMES: A string of zpool names, separated by spaces. You can see the list with `zpool list`.
+- ERROR_REPORT_WEBHOOK_URL: The webhook of the channel you wish to show errors on.
+- DISK_HEALTH_WEBHOOK_URL: The webhook of the channel you want to publish all progress to.
+- DEVICE_NAME: The identifying name of the device you're reporting from.
+- DEVICE_DISCORD_ICON = Optional. A Discord emoji to identify this device.
+
+You'll need to set up a webhook on the two channels you'll be reporting to (Edit channel > Integrations > View Webhooks > Add webhook). Copy the webhook url and plop the webhook for the channel that you'll be relying on all success and error messages to be spammed to into `DISK_HEALTH_WEBHOOK_URL`, meanwhile make another webhook to a channel that you would want only errors to be sent and paste into `ERROR_REPORT_WEBHOOK_URL`.
 
 You can also customize the name and emoji of the device that will be reporting with `DEVICE_NAME` and `DEVICE_ICON`, this way it's easier to sort through multiple devices if they're all reporting to the same channel.
 

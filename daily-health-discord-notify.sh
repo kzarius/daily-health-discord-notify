@@ -1,26 +1,37 @@
 #!/bin/bash
 
+# Use an external .env file to define the custom values here:
+# POOL_NAMES = A string of zpool names, separated by spaces. You can see the list with `zpool list`.
+# ERROR_REPORT_WEBHOOK_URL = The webhook of the channel you wish to show errors on.
+# DISK_HEALTH_WEBHOOK_URL = The webhook of the channel you want to publish all progress to.
+# DEVICE_NAME = The identifying name of the device you're reporting from.
+# DEVICE_DISCORD_ICON = Optional. A Discord emoji to identify this device.
+
+echo >&2 "Beginning zpool scrub checker."
+
+# Import the .env file:
+source .env
+
+
 ### CONFIGURATION -
 
-# Pool names (array):
-pools_name=("storage_pool" "multimedia_pool" "cctv_storage")
+# ZPOOL:
+# Convert the ENV string to an array:
+IFS=' ' read -a POOL_NAMES <<< "$POOL_NAMES"
 
-# Discord config.
-# This webhook points to a channel that only errors will be sent to,
-# so that you can observe the other channel with notifications off.
-GENERAL_WEBHOOK_URL="https://discord.com/api/webhooks/xxxx/xxxx"
-# This points to a channel dedicated to logging everyday statuses. Both
-# successes and errors will be sent here.
-DISK_HEALTH_WEBHOOK_URL="https://discord.com/api/webhooks/xxxx/xxxx"
-
-# For differentiating between different devices you want reported.
-DEVICE_NAME="Home"
-DEVICE_ICON=":whale:" # Hover over the emojis to see the icon name.
+# DISCORD:
+ERROR_REPORT_WEBHOOK_URL="${ERROR_REPORT_WEBHOOK_URL:-https://discord.com/api/webhooks/xxxx/xxxx}"
+DISK_HEALTH_WEBHOOK_URL="${DISK_HEALTH_WEBHOOK_URL:-https://discord.com/api/webhooks/xxxx/xxxx}"
+DEVICE_NAME="${DEVICE_NAME:-My Device}"
+DEVICE_DISCORD_ICON="${DEVICE_DISCORD_ICON:-:robot:}" # Hover over the emojis in Discord to see the icon name.
 
 discord_title=""
 discord_icon=""
 discord_color=""
 discord_description=""
+
+discord_red="15606820"
+discord_green="166160"
 
 # Define keyword signifying unhealthy condtion.
 unhealthy_conditions='(DEGRADED|FAULTED|OFFLINE|UNAVAIL|REMOVED|FAIL|DESTROYED|corrupt|cannot|unrecover)'
@@ -29,10 +40,15 @@ scrub_expiration_days="32"
 # Get date.
 current_date=$(date +%s)
 
+# Let's check if this system even has ZFS.
+if ! hash zpool 2>/dev/null; then
+    echo >&2 "zpool was not found. Exiting."
+    exit 1
+fi
 
 
 # Iterate through the pools.
-for pool_name in "${pools_name[@]}"
+for pool_name in "${POOL_NAMES[@]}"
 do
 
 
@@ -53,7 +69,7 @@ do
         error_report="\n\nThis pool could not be found."
     else
         # Search for any term signifying an uhealthy condition.
-        pool_condition=$(echo "${pool_info}" | egrep -i ${unhealthyConditions})
+        pool_condition=$(echo "${pool_info}" | egrep -i "${unhealthyConditions}")
 
         # Search for error codes or text.
         pool_error_default_status="No known data errors"
@@ -98,14 +114,14 @@ do
     if [ "${error_report}" ] || [ "${scrub_expiration_report}"]; then
 
         discord_icon=":broken_heart:"
-        discord_color="15606820" # Red
+        discord_color="${discord_red}"
         discord_description="${error_report}${scrub_expiration_report}${scrub_resilver_report}"
 
     # Everything's ok.
     else
 
         discord_icon=":green_heart:"
-        discord_color="166160" # Green
+        discord_color="${discord_green}"
         discord_description="${default_report}${scrub_resilver_report}"
 
     fi
@@ -114,19 +130,21 @@ do
     discord_embeds='{
         "username": "Disk Health",
         "embeds": [{
-            "title": "Pool '${pool_name}' (on '${DEVICE_NAME}' '${DEVICE_ICON}')",
-            "description": "'${discord_icon}' '${discord_description}'",
-            "color": '${discord_color}'
+            "title": "Pool '"${pool_name}"' (on '"${DEVICE_NAME}"' '"${DEVICE_ICON}"')",
+            "description": "'"${discord_icon}"' '"${discord_description}"'",
+            "color": '"${discord_color}"'
         }]
     }'
     curl_args='-X POST -H "Content-Type:application/json; charset=utf-8" -d '\'"${discord_embeds}"\'
+    
+    echo >&2 "${curl_args}"
 
     # Run any outcomes on the disk health channel.
-    eval 'curl '${curl_args}' '${DISK_HEALTH_WEBHOOK_URL}
+    $(curl "${curl_args}" "${DISK_HEALTH_WEBHOOK_URL}")
 
     # Also run errors on the general channel.
     if [ "${error_report}" ] || [ "${scrub_expiration_report}"]; then
-        eval 'curl '${curl_args}' '${GENERAL_WEBHOOK_URL}
+        eval 'curl '${curl_args}' '${ERROR_REPORT_WEBHOOK_URL}
     fi
 
 done
